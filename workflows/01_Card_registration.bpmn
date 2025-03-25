@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+
+  <process id="CardRegistration" name="Contactless Card Registration Process">
+
+    <!-- Start Event -->
+    <startEvent id="StartRegistration" name="Start Card Registration"/>
+
+    <!-- First Task - Pre-register cards -->
+    <serviceTask id="PreRegisterCards" name="Pre-register Pool of Cards">
+      <extensionElements>
+        <property name="cardType">NFC/RFID</property>
+      </extensionElements>
+    </serviceTask>
+
+    <!-- Second Task - Generate Unique IDs -->
+    <serviceTask id="GenerateUniqueIDs" name="Generate Unique Card IDs"/>
+
+    <!-- Third Task - Mark as Available -->
+    <serviceTask id="MarkAsAvailable" name="Mark Cards as Available">
+      <extensionElements>
+        <property name="status">available</property>
+      </extensionElements>
+    </serviceTask>
+
+    <!-- End Event -->
+    <endEvent id="EndRegistration" name="Cards Registered"/>
+
+    <!-- Sequence Flows -->
+    <sequenceFlow id="flow1" sourceRef="StartRegistration" targetRef="PreRegisterCards"/>
+    <sequenceFlow id="flow2" sourceRef="PreRegisterCards" targetRef="GenerateUniqueIDs"/>
+    <sequenceFlow id="flow3" sourceRef="GenerateUniqueIDs" targetRef="MarkAsAvailable"/>
+    <sequenceFlow id="flow4" sourceRef="MarkAsAvailable" targetRef="EndRegistration"/>
+
+  </process>
+
+  <!-- Diagram Layout -->
+  <bpmndi:BPMNDiagram>
+    <bpmndi:BPMNPlane bpmnElement="CardRegistration">
+      <!-- Add diagram elements positioning here -->
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</definitions>
