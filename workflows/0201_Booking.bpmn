@@ -1,1 +1,112 @@
 
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+
+  <collaboration id="BookingProcess">
+    <participant id="Client" name="Клиент" processRef="ClientProcess"/>
+    <participant id="Operator" name="Оператор" processRef="OperatorProcess"/>
+    <participant id="System" name="Система" processRef="SystemProcess"/>
+  </collaboration>
+
+  <!-- Client Process -->
+  <process id="ClientProcess" isExecutable="true">
+    <laneSet id="ClientLane">
+      <lane id="ClientActions" name="Действия клиента">
+        <startEvent id="StartBooking" name="Начало бронирования"/>
+        <userTask id="SelectSession" name="Выбрать сеанс"/>
+        <userTask id="SelectSeats" name="Выбрать места"/>
+        <userTask id="ConfirmPayment" name="Подтвердить оплату"/>
+        <receiveTask id="ReceiveTicket" name="Получить билет"/>
+        <endEvent id="EndBooking" name="Бронирование завершено"/>
+      </lane>
+    </laneSet>
+
+    <sequenceFlow id="flow1" sourceRef="StartBooking" targetRef="SelectSession"/>
+    <sequenceFlow id="flow2" sourceRef="SelectSession" targetRef="SelectSeats"/>
+    <sequenceFlow id="flow3" sourceRef="SelectSeats" targetRef="ConfirmPayment"/>
+    <sequenceFlow id="flow4" sourceRef="ConfirmPayment" targetRef="ReceiveTicket"/>
+    <sequenceFlow id="flow5" sourceRef="ReceiveTicket" targetRef="EndBooking"/>
+  </process>
+
+  <!-- Operator Process -->
+  <process id="OperatorProcess" isExecutable="true">
+    <laneSet id="OperatorLane">
+      <lane id="OperatorActions" name="Действия оператора">
+        <userTask id="VerifyCard" name="Проверить карту"/>
+        <userTask id="ProcessReturn" name="Обработать возврат" camunda:formKey="returnForm"/>
+      </lane>
+    </laneSet>
+  </process>
+
+  <!-- System Process -->
+  <process id="SystemProcess" isExecutable="true">
+    <laneSet id="SystemLane">
+      <lane id="SystemActions" name="Системные процессы">
+        <serviceTask id="CheckAvailability" name="Проверить доступность" camunda:class="org.cinema.AvailabilityChecker"/>
+        <serviceTask id="ReserveSeats" name="Зарезервировать места" camunda:expression="${bookingService.reserveSeats(seats)}"/>
+        <serviceTask id="GenerateETicket" name="Сформировать e-билет" camunda:topic="ticketGeneration"/>
+        <serviceTask id="ProcessRefund" name="Обработать возврат средств" camunda:class="org.cinema.RefundProcessor"/>
+        <serviceTask id="UpdateInventory" name="Обновить инвентарь" camunda:expression="${inventoryService.update(seats)}"/>
+      </lane>
+    </laneSet>
+  </process>
+
+  <!-- Message Flows -->
+  <messageFlow id="msg1" sourceRef="SelectSeats" targetRef="CheckAvailability"/>
+  <messageFlow id="msg2" sourceRef="CheckAvailability" targetRef="SelectSeats"/>
+  <messageFlow id="msg3" sourceRef="ConfirmPayment" targetRef="ReserveSeats"/>
+  <messageFlow id="msg4" sourceRef="ReserveSeats" targetRef="VerifyCard"/>
+  <messageFlow id="msg5" sourceRef="VerifyCard" targetRef="GenerateETicket"/>
+  <messageFlow id="msg6" sourceRef="GenerateETicket" targetRef="ReceiveTicket"/>
+  <messageFlow id="msg7" sourceRef="ProcessReturn" targetRef="ProcessRefund"/>
+  <messageFlow id="msg8" sourceRef="ProcessRefund" targetRef="UpdateInventory"/>
+
+  <!-- Diagram Layout -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="BookingProcess">
+      <!-- Pools and Lanes -->
+      <bpmndi:BPMNShape id="Client_di" bpmnElement="Client" isExpanded="true">
+        <dc:Bounds x="100" y="100" width="600" height="250"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Operator_di" bpmnElement="Operator" isExpanded="true">
+        <dc:Bounds x="750" y="100" width="600" height="250"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="System_di" bpmnElement="System" isExpanded="true">
+        <dc:Bounds x="1400" y="100" width="600" height="250"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Client Elements -->
+      <bpmndi:BPMNShape id="StartBooking_di" bpmnElement="StartBooking">
+        <dc:Bounds x="150" y="150" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SelectSession_di" bpmnElement="SelectSession">
+        <dc:Bounds x="250" y="130" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <!-- Other client elements positioned similarly -->
+
+      <!-- Operator Elements -->
+      <bpmndi:BPMNShape id="VerifyCard_di" bpmnElement="VerifyCard">
+        <dc:Bounds x="800" y="150" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <!-- Other operator elements positioned similarly -->
+
+      <!-- System Elements -->
+      <bpmndi:BPMNShape id="CheckAvailability_di" bpmnElement="CheckAvailability">
+        <dc:Bounds x="1450" y="150" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <!-- Other system elements positioned similarly -->
+
+      <!-- Message Flows -->
+      <bpmndi:BPMNEdge id="msg1_di" bpmnElement="msg1">
+        <di:waypoint x="350" y="170"/>
+        <di:waypoint x="1450" y="190"/>
+      </bpmndi:BPMNEdge>
+      <!-- Other message flows positioned similarly -->
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
