@@ -2,6 +2,8 @@
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
              targetNamespace="http://bpmn.io/schema/bpmn">
 
   <process id="CardActivation" name="Card Activation/Deactivation Process">
