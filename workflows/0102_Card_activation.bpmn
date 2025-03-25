@@ -1,75 +1,128 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              targetNamespace="http://bpmn.io/schema/bpmn">
 
-  <process id="CardRegistration" name="Contactless Card Registration Process">
+  <process id="CardActivation" name="Card Activation/Deactivation Process">
 
     <!-- Start Event -->
-    <startEvent id="StartRegistration" name="Start Card Registration"/>
+    <startEvent id="StartActivation" name="Start Card Management"/>
 
-    <!-- First Task - Pre-register cards -->
-    <serviceTask id="PreRegisterCards" name="Pre-register Pool of Cards">
+    <!-- Gateway for Activation/Deactivation choice -->
+    <exclusiveGateway id="ActivationChoice" name="Choose Action"/>
+    
+    <!-- Activation Path -->
+    <sequenceFlow id="toActivation" sourceRef="ActivationChoice" targetRef="ValidateCard">
+      <conditionExpression xsi:type="tFormalExpression">${action == 'activate'}</conditionExpression>
+    </sequenceFlow>
+    
+    <!-- Deactivation Path -->
+    <sequenceFlow id="toDeactivation" sourceRef="ActivationChoice" targetRef="ValidateDeactivation">
+      <conditionExpression xsi:type="tFormalExpression">${action == 'deactivate'}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- Activation Tasks -->
+    <serviceTask id="ValidateCard" name="Validate Card" camunda:class="org.cinema.CardValidator"/>
+    <serviceTask id="UpdateStatusActive" name="Update Status to Active">
       <extensionElements>
-        <property name="cardType">NFC/RFID</property>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="newStatus">ACTIVE</camunda:inputParameter>
+        </camunda:inputOutput>
       </extensionElements>
     </serviceTask>
-
-    <!-- Second Task - Generate Unique IDs -->
-    <serviceTask id="GenerateUniqueIDs" name="Generate Unique Card IDs"/>
-
-    <!-- Third Task - Mark as Available -->
-    <serviceTask id="MarkAsAvailable" name="Mark Cards as Available">
+    
+    <!-- Deactivation Tasks -->
+    <serviceTask id="ValidateDeactivation" name="Validate Deactivation" camunda:class="org.cinema.CardValidator"/>
+    <serviceTask id="UpdateStatusInactive" name="Update Status to Inactive">
       <extensionElements>
-        <property name="status">available</property>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="newStatus">INACTIVE</camunda:inputParameter>
+        </camunda:inputOutput>
       </extensionElements>
     </serviceTask>
-
-    <!-- End Event -->
-    <endEvent id="EndRegistration" name="Cards Registered"/>
+    
+    <!-- Common End Flow -->
+    <sequenceFlow id="toLogActivity" sourceRef="UpdateStatusActive" targetRef="LogActivity"/>
+    <sequenceFlow id="toLogActivity2" sourceRef="UpdateStatusInactive" targetRef="LogActivity"/>
+    
+    <serviceTask id="LogActivity" name="Log Activity" camunda:topic="auditLogging"/>
+    <endEvent id="EndActivation" name="Process Completed"/>
 
     <!-- Sequence Flows -->
-    <sequenceFlow id="flow1" sourceRef="StartRegistration" targetRef="PreRegisterCards"/>
-    <sequenceFlow id="flow2" sourceRef="PreRegisterCards" targetRef="GenerateUniqueIDs"/>
-    <sequenceFlow id="flow3" sourceRef="GenerateUniqueIDs" targetRef="MarkAsAvailable"/>
-    <sequenceFlow id="flow4" sourceRef="MarkAsAvailable" targetRef="EndRegistration"/>
+    <sequenceFlow id="flow1" sourceRef="StartActivation" targetRef="ActivationChoice"/>
+    <sequenceFlow id="flow2" sourceRef="ValidateCard" targetRef="UpdateStatusActive"/>
+    <sequenceFlow id="flow3" sourceRef="ValidateDeactivation" targetRef="UpdateStatusInactive"/>
+    <sequenceFlow id="flow4" sourceRef="LogActivity" targetRef="EndActivation"/>
 
   </process>
 
   <!-- Diagram Layout -->
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="CardRegistration">
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartRegistration">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="CardActivation">
+      <!-- Events -->
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartActivation">
         <dc:Bounds x="152" y="102" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="PreRegisterCards_di" bpmnElement="PreRegisterCards">
-        <dc:Bounds x="240" y="80" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="GenerateUniqueIDs_di" bpmnElement="GenerateUniqueIDs">
-        <dc:Bounds x="400" y="80" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="MarkAsAvailable_di" bpmnElement="MarkAsAvailable">
-        <dc:Bounds x="560" y="80" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndRegistration">
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndActivation">
         <dc:Bounds x="720" y="102" width="36" height="36" />
       </bpmndi:BPMNShape>
+      
+      <!-- Gateway -->
+      <bpmndi:BPMNShape id="Gateway_1_di" bpmnElement="ActivationChoice">
+        <dc:Bounds x="240" y="87" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      
+      <!-- Tasks -->
+      <bpmndi:BPMNShape id="ValidateCard_di" bpmnElement="ValidateCard">
+        <dc:Bounds x="350" y="40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UpdateStatusActive_di" bpmnElement="UpdateStatusActive">
+        <dc:Bounds x="350" y="140" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ValidateDeactivation_di" bpmnElement="ValidateDeactivation">
+        <dc:Bounds x="350" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UpdateStatusInactive_di" bpmnElement="UpdateStatusInactive">
+        <dc:Bounds x="350" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="LogActivity_di" bpmnElement="LogActivity">
+        <dc:Bounds x="550" y="190" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      
       <!-- Sequence Flow Arrows -->
       <bpmndi:BPMNEdge id="flow1_di" bpmnElement="flow1">
         <di:waypoint x="188" y="120" />
         <di:waypoint x="240" y="120" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toActivation_di" bpmnElement="toActivation">
+        <di:waypoint x="265" y="87" />
+        <di:waypoint x="265" y="40" />
+        <di:waypoint x="350" y="80" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="flow2_di" bpmnElement="flow2">
-        <di:waypoint x="340" y="120" />
-        <di:waypoint x="400" y="120" />
+        <di:waypoint x="450" y="80" />
+        <di:waypoint x="450" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toDeactivation_di" bpmnElement="toDeactivation">
+        <di:waypoint x="265" y="137" />
+        <di:waypoint x="265" y="240" />
+        <di:waypoint x="350" y="280" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="flow3_di" bpmnElement="flow3">
-        <di:waypoint x="500" y="120" />
-        <di:waypoint x="560" y="120" />
+        <di:waypoint x="450" y="280" />
+        <di:waypoint x="450" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toLogActivity1_di" bpmnElement="toLogActivity">
+        <di:waypoint x="450" y="180" />
+        <di:waypoint x="550" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toLogActivity2_di" bpmnElement="toLogActivity2">
+        <di:waypoint x="450" y="380" />
+        <di:waypoint x="550" y="230" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="flow4_di" bpmnElement="flow4">
-        <di:waypoint x="660" y="120" />
+        <di:waypoint x="650" y="230" />
         <di:waypoint x="720" y="120" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
